@@ -8,9 +8,9 @@
 #include <ir_Gree.h>//格力的库
 #include <EEPROM.h>//flash的库
 
-char auth[] = "5db4b867957e";   //点灯科技的Key
-char ssid[] = "6G+wifi";       //Wifi名称
-char pswd[] = "20010828";     //Wifi密码
+char auth[] = "111111111111";   //点灯科技的Key
+char ssid[] = "11111111";       //Wifi名称
+char pswd[] = "11111111";     //Wifi密码
 
 IRGreeAC wck_ac(D5);      //D5是红外的引脚
 //----------------------------------------------------//
