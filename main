@@ -1,0 +1,199 @@
+#define BLINKER_PRINT Serial
+#define BLINKER_WIFI
+#include <Blinker.h>  
+#include <IRremoteESP8266.h>
+#include <IRrecv.h>
+#include <IRutils.h>
+#include <IRsend.h>
+#include <ir_Gree.h>//格力的库
+#include <EEPROM.h>//flash的库
+
+char auth[] = "5db4b867957e";   //点灯科技的Key
+char ssid[] = "6G+wifi";       //Wifi名称
+char pswd[] = "20010828";     //Wifi密码
+
+IRGreeAC wck_ac(D5);      //D5是红外的引脚
+//----------------------------------------------------//
+//     Button1  ----  开关
+//     Button2  ----  学习模式（未使用）
+//     Button3  ----  冷空调
+//     Button4  ----  热空调
+//     Button5  ----  电风扇
+//----------------------------------------------------//
+
+BlinkerButton Button1("btn-On");
+BlinkerButton Button2("btn-Study");
+BlinkerButton Button3("btn-Cool");
+BlinkerButton Button4("btn-Hot");
+BlinkerButton Button5("btn-Wind");
+
+int ac_is_opened=0;    // =1  时表示空调已经开启
+
+
+//----------------------------------------------------//
+//     Button1  ----  开关
+//     回调函数
+//     只有当空调开启时，按下该按钮才能关
+//----------------------------------------------------//
+void button1_callback(const String & state)
+{
+    BLINKER_LOG("开关按钮: ", state);
+    if(state=="tap")// && ac_is_opened == 1)
+    {
+        contral_ac_off();
+        Button1.color("#FF0000");Button1.print("空调已关闭");
+        Button2.color("#000000");
+        Button3.color("#000000");Button3.print();
+        Button4.color("#000000");Button4.print();
+        Button5.color("#000000");Button5.print();
+        ac_is_opened = 0;
+    }
+
+}
+
+//----------------------------------------------------//
+//     Button2  ----  学习模式（未使用）
+//     回调函数
+//     未使用
+//----------------------------------------------------//
+void button2_callback(const String & state)
+{
+    BLINKER_LOG("学习按钮：", state);
+    Button2.print("尚不支持学习模式");
+
+}
+
+//----------------------------------------------------//
+//     Button3  ----  冷空调
+//     回调函数
+//     开启冷空调
+//----------------------------------------------------//
+void button3_callback(const String & state) 
+{
+    BLINKER_LOG("制冷模式按钮： ", state);
+    if(state=="tap" )
+    {
+        contral_ac_cool(26);
+        Button1.color("#FF0000");
+        Button2.color("#000000");
+        Button3.color("#7CFC00");
+        Button4.color("#000000");Button4.print();
+        Button5.color("#000000");Button5.print();
+        Button3.print("冷空调已开启");
+        ac_is_opened = 1;
+    }
+}
+
+//----------------------------------------------------//
+//     Button4  ----  热空调
+//     回调函数
+//     开启热空调
+//----------------------------------------------------//
+void button4_callback(const String & state) 
+{
+    BLINKER_LOG("制热模式按钮：", state);
+    if(state=="tap" )
+    {
+        contral_ac_heat(26);
+        Button1.color("#FF0000");
+        Button2.color("#000000");
+        Button3.color("#000000");Button3.print();
+        Button4.color("#7CFC00");
+        Button5.color("#000000");Button5.print();
+        Button4.print("热空调已开启");
+        ac_is_opened = 1;
+    }
+}
+
+//----------------------------------------------------//
+//     Button5  ----  电风扇
+//     回调函数
+//     开启空调风扇
+//----------------------------------------------------//
+void button5_callback(const String & state)
+{
+    BLINKER_LOG("送风模式按钮：", state);
+    if(state=="tap" )
+    {
+        contral_ac_fan(26);
+        Button1.color("#FF0000");
+        Button2.color("#000000");
+        Button3.color("#000000");Button3.print();
+        Button4.color("#000000");Button4.print();
+        Button5.color("#7CFC00");
+        Button5.print("空调风扇已开启");
+        ac_is_opened = 1;
+     }
+}
+
+
+void dataRead(const String & data)
+{
+    BLINKER_LOG("Blinker readString: ", data);
+}
+
+//----------------------------------------------------//
+//              打开冷空调、热空调、空调风扇
+//              关闭空调
+//----------------------------------------------------//
+void contral_ac_off()
+{
+    wck_ac.off();
+    Serial.print("send: ");
+    Serial.println(wck_ac.toString());
+    wck_ac.send();
+}
+void contral_ac_cool(uint8_t tem)
+{
+    wck_ac.on();
+    wck_ac.setMode(kGreeCool);
+    wck_ac.setTemp(tem);
+    Serial.print("send: ");
+    Serial.println(wck_ac.toString());
+    wck_ac.send();
+}
+void contral_ac_heat(uint8_t tem)
+{
+    wck_ac.on();
+    wck_ac.setMode(kGreeHeat);
+    wck_ac.setTemp(tem);
+    Serial.print("send: ");
+    Serial.println(wck_ac.toString());
+    wck_ac.send();
+}
+void contral_ac_fan(uint8_t tem)
+{
+    wck_ac.on();
+    wck_ac.setMode(kGreeFan);
+    wck_ac.setTemp(tem);
+    Serial.print("send: ");
+    Serial.println(wck_ac.toString());
+    wck_ac.send();
+}
+
+
+void setup() 
+{
+    wck_ac.begin();
+    Serial.begin(115200);
+
+    #if defined(BLINKER_PRINT)
+      BLINKER_DEBUG.stream(BLINKER_PRINT);
+    #endif
+    Blinker.begin(auth, ssid, pswd);
+    Blinker.attachData(dataRead);
+    
+    Button1.attach(button1_callback);
+    Button2.attach(button2_callback);
+    Button3.attach(button3_callback);
+    Button4.attach(button4_callback);
+    Button5.attach(button5_callback);
+    Serial.println("All int is OK!");
+    delay(1000);
+  
+}
+
+void loop() {
+      Blinker.run();
+      delay(300);
+}
